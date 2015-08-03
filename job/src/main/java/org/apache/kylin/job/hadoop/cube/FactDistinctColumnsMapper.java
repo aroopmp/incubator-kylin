@@ -20,17 +20,17 @@ package org.apache.kylin.job.hadoop.cube;
 
 import java.io.IOException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.kylin.common.util.Bytes;
 import org.apache.hadoop.io.ShortWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hive.hcatalog.data.HCatRecord;
 import org.apache.hive.hcatalog.data.schema.HCatFieldSchema;
 import org.apache.hive.hcatalog.data.schema.HCatSchema;
 import org.apache.hive.hcatalog.mapreduce.HCatInputFormat;
-
 import org.apache.kylin.common.KylinConfig;
 import org.apache.kylin.common.mr.KylinMapper;
+import org.apache.kylin.common.util.Bytes;
 import org.apache.kylin.cube.CubeInstance;
 import org.apache.kylin.cube.CubeManager;
 import org.apache.kylin.cube.model.CubeDesc;
@@ -64,10 +64,15 @@ public class FactDistinctColumnsMapper<KEYIN> extends KylinMapper<KEYIN, HCatRec
         CubeDesc cubeDesc = cube.getDescriptor();
         intermediateTableDesc = new CubeJoinedFlatTableDesc(cubeDesc, null);
 
-        String[] rowKeyIndexes = conf.get(BatchConstants.CFG_FACT_DICT_COLUMN_ROWKEY_INDEXES).split(",");
-        factDictColRowKeyIndexes = new int[rowKeyIndexes.length];
-        for (int i = 0; i < rowKeyIndexes.length; i++) {
-            factDictColRowKeyIndexes[i] = Integer.parseInt(rowKeyIndexes[i]);
+        String rowKeyIndexesStr = conf.get(BatchConstants.CFG_FACT_DICT_COLUMN_ROWKEY_INDEXES);
+        if (!StringUtils.isEmpty(rowKeyIndexesStr)) {
+            String[] rowKeyIndexes = rowKeyIndexesStr.split(",");
+            factDictColRowKeyIndexes = new int[rowKeyIndexes.length];
+            for (int i = 0; i < rowKeyIndexes.length; i++) {
+                factDictColRowKeyIndexes[i] = Integer.parseInt(rowKeyIndexes[i]);
+            }
+        } else {
+            factDictColRowKeyIndexes = new int[0];
         }
 
         schema = HCatInputFormat.getTableSchema(context.getConfiguration());
