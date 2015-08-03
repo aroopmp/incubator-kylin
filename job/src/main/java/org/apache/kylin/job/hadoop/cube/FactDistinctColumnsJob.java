@@ -21,8 +21,6 @@ package org.apache.kylin.job.hadoop.cube;
 import java.io.IOException;
 import java.util.List;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
 import org.apache.commons.cli.Options;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -47,6 +45,9 @@ import org.apache.kylin.job.hadoop.AbstractHadoopJob;
 import org.apache.kylin.metadata.model.TblColRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 
 /**
  * @author yangli9
@@ -82,13 +83,17 @@ public class FactDistinctColumnsJob extends AbstractHadoopJob {
             jobConf.set(BatchConstants.CFG_CUBE_NAME, cubeName);
             System.out.println("Starting: " + job.getJobName());
 
+            jobConf.set("testConf1", "testConf");
             setJobClasspath(job);
-            
+
             setupMapper(intermediateTable);
             setupReducer(output);
 
+            jobConf.set("testConf2", "testConf");
             // CubeSegment seg = cubeMgr.getCube(cubeName).getTheOnlySegment();
             attachKylinPropsAndMetadata(cubeInstance, jobConf);
+
+            jobConf.set("testConf3", "testConf");
 
             // set names and row key indexes of fact table's dictionary columns in Configuration,
             // so that mapper & reducer task can use them
@@ -111,8 +116,15 @@ public class FactDistinctColumnsJob extends AbstractHadoopJob {
                     factDictColRowKeyIndexes.add(i);
                 }
             }
-            jobConf.set(BatchConstants.CFG_FACT_DICT_COLUMN_NAMES, joiner.join(factDictColNames));
-            jobConf.set(BatchConstants.CFG_FACT_DICT_COLUMN_ROWKEY_INDEXES, joiner.join(factDictColRowKeyIndexes));
+            jobConf.set("testConf4", "testConf");
+
+            String x = joiner.join(factDictColNames);
+            log.info("CFG_FACT_DICT_COLUMN_NAMES is " + x);
+            jobConf.set(BatchConstants.CFG_FACT_DICT_COLUMN_NAMES, x);
+            
+            String y = joiner.join(factDictColRowKeyIndexes);
+            log.info("CFG_FACT_DICT_COLUMN_ROWKEY_INDEXES is " + y);
+            jobConf.set(BatchConstants.CFG_FACT_DICT_COLUMN_ROWKEY_INDEXES, y);
 
             return waitForCompletion(job);
 
@@ -128,12 +140,11 @@ public class FactDistinctColumnsJob extends AbstractHadoopJob {
     }
 
     private void setupMapper(String intermediateTable) throws IOException {
-//        FileInputFormat.setInputPaths(job, input);
+        //        FileInputFormat.setInputPaths(job, input);
 
         String[] dbTableNames = HadoopUtil.parseHiveTableName(intermediateTable);
-        HCatInputFormat.setInput(job, dbTableNames[0],
-                dbTableNames[1]);
-        
+        HCatInputFormat.setInput(job, dbTableNames[0], dbTableNames[1]);
+
         job.setInputFormatClass(HCatInputFormat.class);
         job.setMapperClass(FactDistinctColumnsMapper.class);
         job.setCombinerClass(FactDistinctColumnsCombiner.class);
